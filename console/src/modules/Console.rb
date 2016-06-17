@@ -49,6 +49,9 @@ require "yast"
 
 module Yast
   class ConsoleClass < Module
+    SETUP_SERVICE = "systemd-vconsole-setup"
+    private_constant :SETUP_SERVICE
+
     def main
       Yast.import "UI"
 
@@ -58,6 +61,7 @@ module Yast
       Yast.import "Linuxrc"
       Yast.import "Encoding"
       Yast.import "Stage"
+      Yast.import "SystemdService"
 
       # current base language, used in Check
       @language = "en_US"
@@ -141,6 +145,8 @@ module Yast
           "#\n"
       )
       SCR.Write(path(".sysconfig.console"), nil)
+
+      apply_config 
 
       if @serial != ""
         # during a fresh install, provide the autoconsole feature
@@ -246,6 +252,16 @@ module Yast
     publish :function => :Init, :type => "void ()"
     publish :function => :Check, :type => "boolean ()"
     publish :function => :Console, :type => "void ()"
+
+  private
+
+    def apply_config
+      service.restart if service
+    end
+
+    def service
+      @service ||= SystemdService.find(SETUP_SERVICE)
+    end
   end
 
   Console = ConsoleClass.new
